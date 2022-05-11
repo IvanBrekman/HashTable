@@ -227,8 +227,6 @@ int   extract_bit(int number, int bit);
 char* bin4(int number);
 char* to_string(int number);
 
-char** split(char* string, int* size, char sep=' ');
-
 int print_int_array(int* array, int size, const char* sep=", ", const char* end="\n");
 
 #ifdef ADD_CRC32

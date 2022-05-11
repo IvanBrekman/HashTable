@@ -119,7 +119,7 @@ int isbadreadptr(const void* ptr) {
     int old_errno = errno;
     errno = 0;
     
-    write(nullfd, ptr, 1);
+    int res = write(nullfd, ptr, 1);
     close(nullfd);
 
     int result = errno;
@@ -243,45 +243,6 @@ char* to_string(int number) {
     str_num[d_num + shift] = '\0';
 
     return str_num;
-}
-
-//! Function split string by sep
-//! \param string string to split
-//! \param size   ptr to val, where splitted strings amount will be written
-//! \param sep    value by which string will be splitted (default=" ")
-//! \return       array of splitted strings
-char** split(char* string, int* size, char sep) {
-    ASSERT_IF(VALID_PTR(string), "Invalid string ptr", nullptr);
-    ASSERT_IF(VALID_PTR(size),   "Invalid size ptr",   nullptr);
-
-    int len = (int)strlen(string);
-
-    int  buf_size = 0;
-    char** buffer = NEW_PTR(char*, len);
-
-    int start = 0, end = 0;
-    for (int i = 0; ; i++, start++, end++) {
-        if (string[i] == sep || string[i] == '\0') {
-            if (start == end) {        
-                if (string[i] == '\0') break;
-                continue;
-            }
-
-            char* word = NEW_PTR(char, end - start + 1);
-            memcpy(word, string + start, end - start);
-
-            buffer[buf_size++] = word;
-
-            start = end;
-        } else {
-            start--;
-        }
-
-        if (string[i] == '\0') break;
-    }
-
-    *size = buf_size;
-    return buffer;
 }
 
 int print_int_array(int* array, int size, const char* sep, const char* end) {

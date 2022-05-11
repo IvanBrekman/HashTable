@@ -11,4 +11,6 @@
 #define LOG_PRINTF          0
 #define AUTO_DRAW           1
 
+#define TEST_SPEED
+
 #endif // CONFIG

@@ -11,6 +11,12 @@ const char* SAVE_FILE       = "data/graph/info.txt";
 
 int main(int argc, char** argv) {
     const char* filename = argc > 1 ? argv[1] : LOAD_FILE;
+
+    test_table_speed(filename, 1, 10);
+
+#ifdef TEST_SPEED
+    return 0;
+#endif
     
     CLEAR_SAVE_FILE(SAVE_FILE);
 

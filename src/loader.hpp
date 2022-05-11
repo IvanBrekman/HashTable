@@ -12,6 +12,8 @@ struct LoadContext {
     int finds   = poisons::UNINITIALIZED_INT;
 };
 
+char** split(char* string, int* size, char sep=' ');
+
 LoadContext* load_strings_to_table(HashTable* table, const char* filename, int force_insert);
 
 #endif // LOADERHPP

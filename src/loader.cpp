@@ -9,6 +9,40 @@
 
 #include "loader.hpp"
 
+char** split(char* string, int* size, char sep) {
+    ASSERT_IF(VALID_PTR(string), "Invalid string ptr", nullptr);
+    ASSERT_IF(VALID_PTR(size),   "Invalid size ptr",   nullptr);
+
+    int len = (int)strlen(string);
+
+    int  buf_size = 0;
+    char** buffer = NEW_PTR(char*, len);
+
+    int start = 0, end = 0;
+    for (int i = 0; ; i++, start++, end++) {
+        if (string[i] == sep || string[i] == '\0') {
+            if (start == end) {        
+                if (string[i] == '\0') break;
+                continue;
+            }
+
+            char* word = NEW_PTR(char, end - start + 1);
+            memcpy(word, string + start, end - start);
+
+            buffer[buf_size++] = word;
+
+            start = end;
+        } else {
+            start--;
+        }
+
+        if (string[i] == '\0') break;
+    }
+
+    *size = buf_size;
+    return buffer;
+}
+
 LoadContext* load_strings_to_table(HashTable* table, const char* filename, int force_insert) {
     ASSERT_OK_HASHTABLE(table,     "Check before load strings_to_table func", nullptr);
     ASSERT_IF(VALID_PTR(filename), "Invalid file ptr",                        nullptr);

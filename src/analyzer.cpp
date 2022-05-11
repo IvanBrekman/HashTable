@@ -3,6 +3,7 @@
 //
 
 #include <cstring>
+#include <ctime>
 
 #define  ADD_CRC32
 
@@ -11,6 +12,17 @@
 
 #include "analyzer.hpp"
 
+char* random_word(int len) {
+    ASSERT_IF(len > 0, "Incorrect len value. Should be (> 0)", nullptr);
+
+    char* word = NEW_PTR(char, len + 1);
+
+    for (int i = 0; i < len; i++) {
+        word[i] = rand() % ('z' - 'a' + 1) + 'a';
+    }
+
+    return word;
+}
 
 ull constant_hash(char* string) {
     return 1;
@@ -67,6 +79,56 @@ CollisionData* get_collision_info(HashTable* table) {
     data->coef = (double)elems / lists;
 
     return data;
+}
+
+int test_table_speed(const char* filename, int repeats, double fi_coef) {
+    ASSERT_IF(VALID_PTR(filename), "Invalid filename ptr", 0);
+
+    clock_t sum_time = 0;
+
+    LoadContext* context = nullptr;
+
+    for (int i = 0; i < repeats; i++) {
+        HashTable* table = CREATE_TABLE(table, crc32_hash, validate::MEDIUM_VALIDATE, CAPACITY_VALUES[1]);
+
+        clock_t start_time = clock();
+                context    = load_strings_to_table(table, filename, 0);
+        clock_t end_time   = clock();
+
+        sum_time += end_time - start_time;
+
+        if ((context->inserts * fi_coef) > context->finds) {
+            int need_inserts = (int) (context->inserts * fi_coef) - context->finds;
+
+            for ( ; need_inserts > 0; need_inserts--) {
+                char* word = random_word(rand() % 30 + 1);
+
+                start_time = clock();
+                table_find(table, word);
+                end_time   = clock();
+
+                context->finds++;
+                sum_time += end_time - start_time;
+
+                FREE_PTR(word, char);
+            }
+        }
+
+        table_dtor(table);
+        if (i + 1 < repeats) FREE_PTR(context, LoadContext);
+    }
+    
+    printf("=============== Speed test ===============\n");
+    printf("repeats:  %d\n\n", repeats);
+    printf("time avg: %lf sec\n\n", ((double)sum_time / repeats) / CLOCKS_PER_SEC);
+    printf("finds:    %d\n",  context->finds);
+    printf("inserts:  %d\n",  context->inserts);
+    printf("fi coef:  %lf\n", (double)context->finds / context->inserts);
+    printf("==========================================\n\n");
+
+    FREE_PTR(context, LoadContext);
+
+    return 1;
 }
 
 int test_func_collision(const char* filename, const HashFunc* hash, const char* save_file, int save_from, int save_to) {
