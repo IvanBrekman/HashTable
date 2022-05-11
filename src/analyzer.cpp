@@ -12,10 +12,9 @@
 
 #include "analyzer.hpp"
 
-char* random_word(int len) {
+char* random_word(char* word, int len) {
+    ASSERT_IF(VALID_PTR(word), "Invalid word ptr", nullptr);
     ASSERT_IF(len > 0, "Incorrect len value. Should be (> 0)", nullptr);
-
-    char* word = NEW_PTR(char, len + 1);
 
     for (int i = 0; i < len; i++) {
         word[i] = rand() % ('z' - 'a' + 1) + 'a';
@@ -58,6 +57,32 @@ ull crc32_hash(char* string) {
     return (ull) crc32(string, (DWORD)strlen(string));
 }
 
+ull crc32_hash_asm(char* string) {
+    ull hash = 0;
+
+    __asm__(
+        ".intel_syntax noprefix     \n\t"
+
+        "mov rcx, 4                 \n\t"
+        "xor %[ret_val], %[ret_val] \n\t"
+
+        "calc_hash:                 \n\t"
+            "mov rax, [%[arg_val]]  \n\t"
+
+            "crc32 %[ret_val], rax  \n\t"
+            "add %[arg_val], 8      \n\t"
+            "loop calc_hash         \n\t"
+
+        ".att_syntax prefix         \n\t"
+
+        : [ret_val]"=r"(hash)
+        : [arg_val]"r"(string)
+        : "%rax", "%rcx"
+    );
+
+    return hash;
+}
+
 CollisionData* get_collision_info(HashTable* table) {
     ASSERT_OK_HASHTABLE(table, "Check before get_collision_info func", 0);
 
@@ -89,7 +114,7 @@ int test_table_speed(const char* filename, int repeats, double fi_coef) {
     LoadContext* context = nullptr;
 
     for (int i = 0; i < repeats; i++) {
-        HashTable* table = CREATE_TABLE(table, crc32_hash, validate::MEDIUM_VALIDATE, CAPACITY_VALUES[1]);
+        HashTable* table = CREATE_TABLE(table, crc32_hash_asm, validate::MEDIUM_VALIDATE, CAPACITY_VALUES[1]);
 
         clock_t start_time = clock();
                 context    = load_strings_to_table(table, filename, 0);
@@ -100,8 +125,9 @@ int test_table_speed(const char* filename, int repeats, double fi_coef) {
         if ((context->inserts * fi_coef) > context->finds) {
             int need_inserts = (int) (context->inserts * fi_coef) - context->finds;
 
+            char* word = (char*) calloc(MAX_RANDOM_WORD_LEN, sizeof(char));
             for ( ; need_inserts > 0; need_inserts--) {
-                char* word = random_word(rand() % 30 + 1);
+                word = random_word(word, rand() % MAX_RANDOM_WORD_LEN + 1);
 
                 start_time = clock();
                 table_find(table, word);
@@ -109,9 +135,8 @@ int test_table_speed(const char* filename, int repeats, double fi_coef) {
 
                 context->finds++;
                 sum_time += end_time - start_time;
-
-                FREE_PTR(word, char);
             }
+            FREE_PTR(word, char);
         }
 
         table_dtor(table);

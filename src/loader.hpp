@@ -7,6 +7,10 @@
 
 #include "table/hash_table.hpp"
 
+const int NBYTES       = 8;
+const int ALLIGENCE    = 32;
+const int STORAGE_SIZE = 30000;
+
 struct LoadContext {
     int inserts = poisons::UNINITIALIZED_INT;
     int finds   = poisons::UNINITIALIZED_INT;
