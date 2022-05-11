@@ -1,28 +1,33 @@
 #include <cstdio>
 
 #include "config.hpp"
-#include "table/hash_table.hpp"
+#include "src/analyzer.hpp"
+
+const char* PYTHON_SCRIPT   = "python3 data/graph/draw_graph.py info.txt graph.png --dir=data/graph/";
+
+const char* LOAD_FILE       = "data/shakespear_cleared.txt";
+const char* LOAD_SET_FILE   = "data/shakespear_cleared++.txt";
+const char* SAVE_FILE       = "data/graph/info.txt";
 
 int main(int argc, char** argv) {
-    HashTable* table = CREATE_TABLE(table, default_hash, validate::MEDIUM_VALIDATE, 150);
+    const char* filename = argc > 1 ? argv[1] : LOAD_FILE;
+    
+    CLEAR_SAVE_FILE(SAVE_FILE);
 
-    char* str1 = "asdf";
-    char* str2 = "qwe";
-    char* str3 = "zxcb";
-    char* str4 = "12345";
-    char* str5 = "qqq";
-    char* str6 = "fds245";
+    test_func_collision(LOAD_SET_FILE, ALL_HASH_FUNCS + 0, SAVE_FILE, 0, 50);
+    test_func_collision(LOAD_SET_FILE, ALL_HASH_FUNCS + 1, SAVE_FILE, 0, 256);
+    test_func_collision(LOAD_SET_FILE, ALL_HASH_FUNCS + 2, SAVE_FILE, 0, 1500);
+    test_func_collision(LOAD_SET_FILE, ALL_HASH_FUNCS + 3, SAVE_FILE, 0, 100);
+    test_func_collision(LOAD_SET_FILE, ALL_HASH_FUNCS + 4, SAVE_FILE, 0, OLD_CAPACITY);
+    test_func_collision(LOAD_SET_FILE, ALL_HASH_FUNCS + 5, SAVE_FILE, 0, OLD_CAPACITY);
 
-    table_add(table, str1);
-    table_add(table, str2);
-    table_add(table, str3);
-    table_add(table, str4);
-    table_add(table, str5);
-    table_add(table, str6);
-
-    table_dump(table, "Check");
-
-    table_dtor(table);
+    if (AUTO_DRAW) {
+        printf("Please wait, graphs are drawing...\n");
+        int res = system(PYTHON_SCRIPT);
+        
+        if (res == 0) printf("Complete.\n\n");
+        else          printf("Error in drawing.\n\n");
+    }
 
     return 0;
 }
