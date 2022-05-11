@@ -4,9 +4,21 @@
 
 #include <cstdio>
 #include <cstring>
+#include <immintrin.h>
 
 #include "config.hpp"
 #include "list.hpp"
+
+int strcmp_avx(char* string1, char* string2) {
+    __m256i str1 = _mm256_lddqu_si256((const __m256i*) string1);
+    __m256i str2 = _mm256_lddqu_si256((const __m256i*) string2);
+
+    __m256i res  = _mm256_cmpeq_epi8(str1, str2);
+
+    int cmp_res  = _mm256_movemask_epi8 (res);
+
+    return cmp_res != -1;
+}
 
 int list_ctor(List* lst, int capacity, validate level) {
     ASSERT_IF(VALID_PTR(lst), "Invalid lst ptr",                           0);
@@ -112,7 +124,7 @@ int list_find(const List* lst, char* string) {
     ASSERT_IF(VALID_PTR(string), "Invalid string ptr", NOT_FOUND);
 
     for (int i = 0; i < lst->size; i++) {
-        if (strcmp(lst->pointers[i], string) == 0) return i;
+        if (strcmp_avx(lst->pointers[i], string) == 0) return i;
     }
 
     return NOT_FOUND;

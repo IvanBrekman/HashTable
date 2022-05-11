@@ -9,7 +9,7 @@ PROFILE_OUT 	 = $(PROFILE_OUT_DIR)/$(PROFILE_OUT_FILE).$(ID)
 LIBS		= libs/baselib.cpp table/list.cpp
 SRC_FILES   =  src/loader.cpp    src/analyzer.cpp
 
-OPTIONS		= -o $(OUT_FILE) -I . -Ofast -g -no-pie
+OPTIONS		= -o $(OUT_FILE) -I . -Ofast -g -no-pie -march=native
 
 ID 			= $(shell python3 logs/id_script.py $(PROFILE_OUT_FILE) --dir=$(PROFILE_OUT_DIR))
 

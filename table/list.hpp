@@ -51,6 +51,8 @@ enum list_errors {
     OK = 0
 };
 
+int strcmp_avx(char* string1, char* string2);
+
 int list_ctor(List* lst, int capacity, validate level);
 int list_dtor(List* lst);
 
