@@ -8,18 +8,22 @@
 #include "config.hpp"
 #include "libs/baselib.hpp"
 
-#define ASSERT_OK_LIST(obj, reason, ret) do {                   \
-    if (obj->_vlevel >= WEAK_VALIDATE && list_error(obj)) {     \
-        list_dump(obj, reason);                                 \
-        if (obj->_vlevel >= HIGHEST_VALIDATE) {                 \
-            LOG_DUMP(obj, reason, list_dump);                   \
-        }                                                       \
-        ASSERT_IF(0, "verify failed", ret);                     \
-    } else if (list_error(obj)) {                               \
-        errno = list_error(obj);                                \
-        return ret;                                             \
-    }                                                           \
-} while (0)
+#ifndef NO_CHECKS
+    #define ASSERT_OK_LIST(obj, reason, ret) do {                   \
+        if (obj->_vlevel >= WEAK_VALIDATE && list_error(obj)) {     \
+            list_dump(obj, reason);                                 \
+            if (obj->_vlevel >= HIGHEST_VALIDATE) {                 \
+                LOG_DUMP(obj, reason, list_dump);                   \
+            }                                                       \
+            ASSERT_IF(0, "verify failed", ret);                     \
+        } else if (list_error(obj)) {                               \
+            errno = list_error(obj);                                \
+            return ret;                                             \
+        }                                                           \
+    } while (0)
+#else
+    #define ASSERT_OK_LIST(obj, reason, ret) 
+#endif
 
 typedef validate_level validate;
 

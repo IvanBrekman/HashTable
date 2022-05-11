@@ -12,5 +12,6 @@
 #define AUTO_DRAW           1
 
 #define TEST_SPEED
+#define NO_CHECKS
 
 #endif // CONFIG

@@ -9,18 +9,22 @@
 #include "libs/baselib.hpp"
 #include "list.hpp"
 
-#define ASSERT_OK_HASHTABLE(obj, reason, ret) do {                      \
-    if (obj->_vlevel >= WEAK_VALIDATE && table_error(obj)) {            \
-        table_dump(obj, reason);                                        \
-        if (obj->_vlevel >= HIGHEST_VALIDATE) {                         \
-            LOG_DUMP(obj, reason, table_dump);                          \
-        }                                                               \
-        ASSERT_IF(0, "verify failed", ret);                             \
-    } else if (table_error(obj)) {                                      \
-        errno = table_error(obj);                                       \
-        return ret;                                                     \
-    }                                                                   \
-} while (0)
+#ifndef NO_CHECKS
+    #define ASSERT_OK_HASHTABLE(obj, reason, ret) do {                      \
+        if (obj->_vlevel >= WEAK_VALIDATE && table_error(obj)) {            \
+            table_dump(obj, reason);                                        \
+            if (obj->_vlevel >= HIGHEST_VALIDATE) {                         \
+                LOG_DUMP(obj, reason, table_dump);                          \
+            }                                                               \
+            ASSERT_IF(0, "verify failed", ret);                             \
+        } else if (table_error(obj)) {                                      \
+            errno = table_error(obj);                                       \
+            return ret;                                                     \
+        }                                                                   \
+    } while (0)
+#else
+    #define ASSERT_OK_HASHTABLE(obj, reason, ret) 
+#endif
 
 #define TYPE "char*"
 #define CREATE_TABLE(var, args...)                                      \
