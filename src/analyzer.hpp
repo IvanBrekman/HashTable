@@ -23,8 +23,6 @@ struct CollisionData {
 };
 
 // ==================== Prototypes ====================
-char* random_word(int len);
-
 ull constant_hash    (char* string);
 ull first_letter_hash(char* string);
 ull symbol_sum_hash  (char* string);

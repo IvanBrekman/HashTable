@@ -115,6 +115,8 @@ int test_table_speed(const char* filename, int repeats, double fi_coef) {
         }
 
         table_dtor(table);
+
+        FREE_PTR(context->storage, char);
         if (i + 1 < repeats) FREE_PTR(context, LoadContext);
     }
     
@@ -161,10 +163,11 @@ int test_func_collision(const char* filename, const HashFunc* hash, const char* 
     printf("fi coef:        %lf\n", (double)context->finds / context->inserts);
     printf("==============================================\n\n");
 
-    FREE_PTR(data->data, int);
+    FREE_PTR(data->data,       int);
+    FREE_PTR(context->storage, char);
 
-    FREE_PTR(data,       CollisionData);
-    FREE_PTR(context,    LoadContext);
+    FREE_PTR(data,    CollisionData);
+    FREE_PTR(context, LoadContext);
 
     table_dtor(table);
     close_file(dest);

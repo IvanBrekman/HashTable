@@ -6,7 +6,7 @@ PROFILE_OUT_DIR  = logs/
 PROFILE_OUT_FILE = profile.out
 PROFILE_OUT 	 = $(PROFILE_OUT_DIR)/$(PROFILE_OUT_FILE).$(ID)
 
-LIBS		= libs/baselib.cpp  libs/file_funcs.cpp table/list.cpp
+LIBS		= libs/baselib.cpp table/list.cpp
 SRC_FILES   =  src/loader.cpp    src/analyzer.cpp
 
 OPTIONS		= -o $(OUT_FILE) -I . -Ofast -g -no-pie
