@@ -15,7 +15,7 @@ int strcmp_avx(char* string1, char* string2) {
 
     __m256i res  = _mm256_cmpeq_epi8(str1, str2);
 
-    int cmp_res  = _mm256_movemask_epi8 (res);
+    int cmp_res  = _mm256_movemask_epi8(res);
 
     return cmp_res != -1;
 }
