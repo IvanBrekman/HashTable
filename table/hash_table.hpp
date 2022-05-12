@@ -94,10 +94,10 @@ enum hashtable_errors {
 int print_str   (char* string);
 ull default_hash(char* string);
 
-HashTable* table_ctor(HashInfo* info=nullptr,
-                      ull (*hash_func) (char* string)=default_hash,
-                      validate level=VALIDATE_LEVEL,
-                      int   capacity=CAPACITY_VALUES[0]
+HashTable* table_ctor(HashInfo*   info                      = nullptr,
+                      ull       (*hash_func) (char* string) = default_hash,
+                      validate    level                     = VALIDATE_LEVEL,
+                      int         capacity                  = CAPACITY_VALUES[0]
                      );
 HashTable* table_dtor(HashTable* table);
 
@@ -105,7 +105,6 @@ hashtable_errors table_error     (const HashTable*       table);
 const char*      table_error_desc(const hashtable_errors error_code);
 
 int table_add (      HashTable* table, char* string);
-int table_pop (      HashTable* table, char* string);
 int table_find(const HashTable* table, char* string);
 
 int table_rehash(    HashTable* table, int new_capacity=OLD_CAPACITY);
