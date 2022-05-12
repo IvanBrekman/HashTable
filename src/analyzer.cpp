@@ -125,9 +125,9 @@ int test_table_speed(const char* filename, int repeats, double fi_coef) {
         if ((context->inserts * fi_coef) > context->finds) {
             int need_inserts = (int) (context->inserts * fi_coef) - context->finds;
 
-            char* word = (char*) calloc(MAX_RANDOM_WORD_LEN, sizeof(char));
+            char* word = (char*) calloc(ALLIGENCE, sizeof(char));
             for ( ; need_inserts > 0; need_inserts--) {
-                word = random_word(word, rand() % MAX_RANDOM_WORD_LEN + 1);
+                word = random_word(word, rand() % ALLIGENCE + 1);
 
                 start_time = clock();
                 table_find(table, word);

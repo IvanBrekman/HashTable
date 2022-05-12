@@ -39,8 +39,7 @@ int            test_func_collision(const char* filename, const HashFunc* hash, c
 // ====================================================
 
 // ==================== CONSTS ====================
-const int MAX_RANDOM_WORD_LEN = 30;
-const ull P_VALUE             = 257;
+const ull P_VALUE = 257;
 
 const HashFunc ALL_HASH_FUNCS[] = {
     { constant_hash,     "Constant hash"     },
