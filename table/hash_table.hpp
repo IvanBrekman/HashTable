@@ -40,8 +40,6 @@
         var = table_ctor(info, args);                                   \
     } while (0) /* For ';' requirement */
 
-typedef unsigned long long  ull;
-
 const long unsigned INIT_CANARY  = 0x5AFEA2EA; // SAFE AREA
 const long unsigned FREE_CANARY  = 0xDEADA2EA; // DEAD AREA
 const long unsigned NO_INFO_PTR  = 0x5015F0;   // NO INFO
@@ -61,17 +59,17 @@ struct HashInfo {
 };
 
 struct HashTable {
-    ull        _lcanary = INIT_CANARY;
-    validate   _vlevel  = validate::NO_VALIDATE;
-    HashInfo*  _info    = (HashInfo*) poisons::UNINITIALIZED_PTR;
+    unsigned long long _lcanary = INIT_CANARY;
+    validate_level_t   _vlevel  = validate_level_t::NO_VALIDATE;
+    HashInfo*          _info    = (HashInfo*) poisons::UNINITIALIZED_PTR;
 
-    ull (*_hash) (char* string) = (ull (*) (char*)) poisons::UNINITIALIZED_PTR;
+    unsigned long long (*_hash) (char* string) = (unsigned long long (*) (char*)) poisons::UNINITIALIZED_PTR;
 
     List*   data        = (List*)poisons::UNINITIALIZED_PTR;
     int     size        = poisons::UNINITIALIZED_INT;
     int     capacity    = poisons::UNINITIALIZED_INT;
 
-    ull        _rcanary = INIT_CANARY;
+    unsigned long long _rcanary = INIT_CANARY;
 };
 
 enum hashtable_errors {
@@ -92,12 +90,12 @@ enum hashtable_errors {
 };
 
 int print_str   (char* string);
-ull default_hash(char* string);
+unsigned long long default_hash(char* string);
 
-HashTable* table_ctor(HashInfo*   info                      = nullptr,
-                      ull       (*hash_func) (char* string) = default_hash,
-                      validate    level                     = VALIDATE_LEVEL,
-                      int         capacity                  = CAPACITY_VALUES[0]
+HashTable* table_ctor(HashInfo*             info                      = nullptr,
+                      unsigned long long  (*hash_func) (char* string) = default_hash,
+                      validate_level_t      level                     = VALIDATE_LEVEL,
+                      int                   capacity                  = CAPACITY_VALUES[0]
                      );
 HashTable* table_dtor(HashTable* table);
 

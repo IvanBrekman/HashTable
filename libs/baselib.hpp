@@ -184,7 +184,7 @@ Default define to ASSERT_OK. Use it to customize macros for each project.
 #define NATURAL     "\033[0m"
 // ----------------------------------------------------------------------------
 
-enum validate_level {
+enum validate_level_t {
     NO_VALIDATE      = 0, // No checks in program
     WEAK_VALIDATE    = 1, // Checks only fields with  O(1) complexity
     MEDIUM_VALIDATE  = 2, // Checks filed, which need O(n) complexity

@@ -5,7 +5,7 @@
 #ifndef CONFIG
 #define CONFIG
 
-#define VALIDATE_LEVEL      validate_level::NO_VALIDATE
+#define VALIDATE_LEVEL      validate_level_t::NO_VALIDATE
 #define EXECUTE_WAITINGS    0
 
 #define LOG_PRINTF          0

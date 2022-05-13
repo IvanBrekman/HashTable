@@ -25,10 +25,8 @@
     #define ASSERT_OK_LIST(obj, reason, ret) 
 #endif
 
-typedef validate_level validate;
-
 struct List {
-    validate _vlevel = validate::NO_VALIDATE;
+    validate_level_t _vlevel = validate_level_t::NO_VALIDATE;
 
     char** pointers = (char**) poisons::UNINITIALIZED_PTR;
 
@@ -53,7 +51,7 @@ enum list_errors {
 
 int strcmp_avx(char* string1, char* string2);
 
-int list_ctor(List* lst, int capacity, validate level);
+int list_ctor(List* lst, int capacity, validate_level_t level);
 int list_dtor(List* lst);
 
 list_errors list_error     (const List*       lst);

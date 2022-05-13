@@ -23,16 +23,16 @@ char* random_word(char* word, int len) {
     return word;
 }
 
-ull constant_hash(char* string) {
+unsigned long long constant_hash(char* string) {
     return 1;
 }
 
-ull first_letter_hash(char* string) {
+unsigned long long first_letter_hash(char* string) {
     return *string;
 }
 
-ull symbol_sum_hash(char* string) {
-    ull sum = 0;
+unsigned long long symbol_sum_hash(char* string) {
+    unsigned long long sum = 0;
     for (int i = 0; string[i] != '\0'; i++) {
         sum += string[i];
     }
@@ -40,12 +40,12 @@ ull symbol_sum_hash(char* string) {
     return sum;
 }
 
-ull string_len_hash(char* string) {
+unsigned long long string_len_hash(char* string) {
     return strlen(string);
 }
 
-ull roll_hash(char* string) {
-    ull hash = string[0];
+unsigned long long roll_hash(char* string) {
+    unsigned long long hash = string[0];
     while (*string) {
         hash = ((hash >> 1) | (hash << 63)) ^ *(string++);
     }
@@ -53,12 +53,12 @@ ull roll_hash(char* string) {
     return hash;
 }
 
-ull crc32_hash(char* string) {
-    return (ull) crc32(string, (DWORD)strlen(string));
+unsigned long long crc32_hash(char* string) {
+    return (unsigned long long) crc32(string, (DWORD)strlen(string));
 }
 
-ull crc32_hash_asm(char* string) {
-    ull hash = 0;
+unsigned long long crc32_hash_asm(char* string) {
+    unsigned long long hash = 0;
 
     __asm__(
         ".intel_syntax noprefix     \n\t"
@@ -114,7 +114,7 @@ int test_table_speed(const char* filename, int repeats, double fi_coef) {
     LoadContext* context = nullptr;
 
     for (int i = 0; i < repeats; i++) {
-        HashTable* table = CREATE_TABLE(table, crc32_hash_asm, validate::MEDIUM_VALIDATE, CAPACITY_VALUES[1]);
+        HashTable* table = CREATE_TABLE(table, crc32_hash_asm, validate_level_t::MEDIUM_VALIDATE, CAPACITY_VALUES[1]);
 
         clock_t start_time = clock();
                 context    = load_strings_to_table(table, filename, 0);
@@ -162,7 +162,7 @@ int test_func_collision(const char* filename, const HashFunc* hash, const char* 
     ASSERT_IF(VALID_PTR(filename), "Invalid filename ptr", 0);
     ASSERT_IF(VALID_PTR(hash),     "Invalid hash ptr",     0);
 
-    HashTable*   table   = CREATE_TABLE(table, hash->func, validate::WEAK_VALIDATE, CAPACITY_VALUES[1]);
+    HashTable*   table   = CREATE_TABLE(table, hash->func, validate_level_t::WEAK_VALIDATE, CAPACITY_VALUES[1]);
     LoadContext* context = load_strings_to_table(table, filename, 1);
 
     CollisionData* data  = get_collision_info(table);

@@ -20,7 +20,7 @@ int strcmp_avx(char* string1, char* string2) {
     return cmp_res != -1;
 }
 
-int list_ctor(List* lst, int capacity, validate level) {
+int list_ctor(List* lst, int capacity, validate_level_t level) {
     ASSERT_IF(VALID_PTR(lst), "Invalid lst ptr",                           0);
     ASSERT_IF(capacity > 0,   "Incorrect capacity value. Should be (> 0)", 0);
 
@@ -55,7 +55,7 @@ list_errors list_error(const List* lst) {
 
     if (lst->size > lst->capacity) return list_errors::SIZE_EXCEEDED_CAPACITY;
 
-    if (lst->_vlevel >= validate::MEDIUM_VALIDATE) {
+    if (lst->_vlevel >= validate_level_t::MEDIUM_VALIDATE) {
         for (int i = 0; i < lst->size; i++) {
             if (!VALID_PTR(lst->pointers[i])) return list_errors::INVALID_STRING_PTR;
         }
@@ -107,7 +107,7 @@ int list_resize(List* lst, int new_capacity) {
     lst->capacity = new_capacity;
 
     if (!VALID_PTR(lst->pointers)) {
-        if (lst->_vlevel >= validate::WEAK_VALIDATE) {
+        if (lst->_vlevel >= validate_level_t::WEAK_VALIDATE) {
             list_dump(lst, "Not enough memory", 0);
         }
 
@@ -192,7 +192,7 @@ int list_dump(const List* lst, const char* reason, FILE* log) {
         }
         fprintf(log, "\n");
     } else {
-        fprintf(log, "    Data is hidden with current validate level(%d)\n\n", lst->_vlevel);
+        fprintf(log, "    Data is hidden with current validate_level_t level(%d)\n\n", lst->_vlevel);
     }
 
     fprintf(log, COLORED_OUTPUT("|---------------------Compilation  Date %s %s---------------------|", ORANGE, log),

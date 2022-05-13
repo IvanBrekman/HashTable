@@ -8,11 +8,11 @@
 #include "libs/baselib.hpp"
 #include "hash_table.hpp"
 
-ull default_hash(char* string) {
-    return (ull) *string;
+unsigned long long default_hash(char* string) {
+    return (unsigned long long) *string;
 }
 
-HashTable* table_ctor(HashInfo* info, ull (*hash_func) (char* string), validate level, int capacity) {
+HashTable* table_ctor(HashInfo* info, unsigned long long (*hash_func) (char* string), validate_level_t level, int capacity) {
     ASSERT_IF(VALID_PTR(hash_func),  "Invalid hash func ptr",                    nullptr);
     ASSERT_IF(capacity > 0,          "Incorrect capacity value (should be > 0)", nullptr);
 
@@ -52,7 +52,7 @@ HashTable* table_dtor(HashTable* table) {
     table->size     = poisons::FREED_ELEMENT;
     table->capacity = poisons::FREED_ELEMENT;
 
-    table->_hash    = (ull (*) (char*))poisons::FREED_PTR;
+    table->_hash    = (unsigned long long (*) (char*))poisons::FREED_PTR;
 
     if (VALID_PTR(table->_info)) FREE_PTR(table->_info, HashInfo);
     FREE_PTR(table->data, List);
@@ -78,7 +78,7 @@ hashtable_errors table_error(const HashTable* table) {
     
     if (table->size > table->capacity)      return hashtable_errors::SIZE_EXCEEDED_CAPACITY_;
 
-    if (table->_vlevel >= validate::HIGHEST_VALIDATE) {
+    if (table->_vlevel >= validate_level_t::HIGHEST_VALIDATE) {
         for (int i = 0; i < table->capacity; i++) {
             if(list_error(table->data + i)) return hashtable_errors::INVALID_LIST;
         }
@@ -122,7 +122,7 @@ int table_add(HashTable* table, char* string) {
     ASSERT_OK_HASHTABLE(table,   "Check before add function", 0);
     ASSERT_IF(VALID_PTR(string), "Invalid item ptr",          0);
 
-    ull hash = table->_hash(string) % table->capacity;
+    unsigned long long hash = table->_hash(string) % table->capacity;
     ASSERT_IF(hash < table->capacity, "Hash exceeded table capacity. Hash should be < table->capacity", 0);
 
     int res = list_push(table->data + hash, string);
@@ -139,7 +139,7 @@ int table_find(const HashTable* table, char* string) {
     ASSERT_OK_HASHTABLE(table,   "Check before find function", NOT_FOUND);
     ASSERT_IF(VALID_PTR(string), "Invalid item ptr",           NOT_FOUND);
 
-    ull hash = table->_hash(string) % table->capacity;
+    unsigned long long hash = table->_hash(string) % table->capacity;
     ASSERT_IF(hash < table->capacity, "Hash exceeded table capacity. Hash should be < table->capacity", NOT_FOUND);
 
     return list_find(table->data + hash, string);
@@ -240,7 +240,7 @@ int table_dump(const HashTable* table, const char* reason, FILE* log) {
     else                  fprintf(log, "    Data[%p]:\n",                      table->data);
 
     if (!VALID_PTR(table->data)) fprintf(log, COLORED_OUTPUT("    Cant access data by this ptr\n\n", RED, log));
-    else if (table->_vlevel >= validate::MEDIUM_VALIDATE) {
+    else if (table->_vlevel >= validate_level_t::MEDIUM_VALIDATE) {
         for (int i = 0; i < table->capacity; i++) {
             List* lst = table->data + i;
 
@@ -262,7 +262,7 @@ int table_dump(const HashTable* table, const char* reason, FILE* log) {
         }
         fprintf(log, "\n");
     } else {
-        fprintf(log, "    Data is hidden with current validate level(%d)\n\n", table->_vlevel);
+        fprintf(log, "    Data is hidden with current validate_level_t level(%d)\n\n", table->_vlevel);
     }
 
     fprintf(log, COLORED_OUTPUT("|---------------------Compilation  Date %s %s---------------------|", ORANGE, log),
