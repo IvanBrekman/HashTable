@@ -103,7 +103,7 @@ int get_next_capacity(int capacity);
 | first_letter_hash | возвращает ascii-код первого символа слова |
 | symbol_sum_hash | возвращает сумму ascii-кодов символов слова |
 | string_len_hash | возвращает длину слова |
-| roll_hash | полиномиальный хеш |
+| roll_hash | кольцевой хеш |
 | crc32_hash | реализация crc32 |
 
 <br>
@@ -230,7 +230,7 @@ fi coef:        0.000000
 | first_letter_hash | возвращает ascii-код первого символа слова | 149.720000 |
 | symbol_sum_hash | возвращает сумму ascii-кодов символов слова | 5.191401 |
 | string_len_hash | возвращает длину слова | 233.937500 |
-| roll_hash | полиномиальный хеш | 1.895190 |
+| roll_hash | кольцевой хеш | 1.895190 |
 | crc32_hash | реализация crc32 | 1.417266 |
 
 <br>
