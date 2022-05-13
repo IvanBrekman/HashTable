@@ -4,6 +4,7 @@
 
 #include <cstring>
 #include <ctime>
+#include <immintrin.h>
 
 #define  ADD_CRC32
 
@@ -11,6 +12,40 @@
 #include "loader.hpp"
 
 #include "analyzer.hpp"
+
+int print_str(item_t* item) {
+    ASSERT_IF(VALID_PTR(*item), "Invalid *item ptr", 0);
+
+    printf("'%s'", *item);
+
+    return 1;
+}
+
+int cmp_str(item_t* item1, item_t* item2) {
+    ASSERT_IF(VALID_PTR(*item1), "Invalid *item1 ptr", 0);
+    ASSERT_IF(VALID_PTR(*item2), "Invalid *item2 ptr", 0);
+
+    return strcmp(*item1, *item2);
+}
+
+int strcmp_avx_32len(item_t* item1, item_t* item2) {
+    __m256i str1 = _mm256_lddqu_si256((const __m256i*) *item1);
+    __m256i str2 = _mm256_lddqu_si256((const __m256i*) *item2);
+
+    __m256i res  = _mm256_cmpeq_epi8(str1, str2);
+
+    int cmp_res  = _mm256_movemask_epi8(res);
+
+    return cmp_res != -1;
+}
+
+int del_str(item_t* item) {
+    ASSERT_IF(VALID_PTR(*item), "Invalid *item ptr", 0);
+
+    *item = (item_t) poisons::FREED_PTR;
+
+    return 1;
+}
 
 char* random_word(char* word, int len) {
     ASSERT_IF(VALID_PTR(word), "Invalid word ptr", nullptr);
@@ -23,15 +58,17 @@ char* random_word(char* word, int len) {
     return word;
 }
 
-unsigned long long constant_hash(char* string) {
+unsigned long long constant_hash(item_t* item) {
     return 1;
 }
 
-unsigned long long first_letter_hash(char* string) {
-    return *string;
+unsigned long long first_letter_hash(item_t* item) {
+    return **item;
 }
 
-unsigned long long symbol_sum_hash(char* string) {
+unsigned long long symbol_sum_hash(item_t* item) {
+    char* string = *item;
+
     unsigned long long sum = 0;
     for (int i = 0; string[i] != '\0'; i++) {
         sum += string[i];
@@ -40,11 +77,13 @@ unsigned long long symbol_sum_hash(char* string) {
     return sum;
 }
 
-unsigned long long string_len_hash(char* string) {
-    return strlen(string);
+unsigned long long string_len_hash(item_t* item) {
+    return strlen(*item);
 }
 
-unsigned long long roll_hash(char* string) {
+unsigned long long roll_hash(item_t* item) {
+    char* string = *item;
+
     unsigned long long hash = string[0];
     while (*string) {
         hash = ((hash >> 1) | (hash << 63)) ^ *(string++);
@@ -53,11 +92,13 @@ unsigned long long roll_hash(char* string) {
     return hash;
 }
 
-unsigned long long crc32_hash(char* string) {
-    return (unsigned long long) crc32(string, (DWORD)strlen(string));
+unsigned long long crc32_hash(item_t* item) {
+    return (unsigned long long) crc32(*item, (DWORD)strlen(*item));
 }
 
-unsigned long long crc32_hash_asm(char* string) {
+static __attribute__((always_inline)) unsigned long long asm_crc32_hash(item_t* item) {
+    char* string = *item;
+
     unsigned long long hash = 0;
 
     __asm__(
@@ -76,7 +117,7 @@ unsigned long long crc32_hash_asm(char* string) {
         ".att_syntax prefix         \n\t"
 
         : [ret_val]"=r"(hash)
-        : [arg_val]"r"(string)
+        : [arg_val]"S"(string)
         : "%rax", "%rcx"
     );
 
@@ -114,7 +155,7 @@ int test_table_speed(const char* filename, int repeats, double fi_coef) {
     LoadContext* context = nullptr;
 
     for (int i = 0; i < repeats; i++) {
-        HashTable* table = CREATE_TABLE(table, crc32_hash_asm, validate_level_t::MEDIUM_VALIDATE, CAPACITY_VALUES[1]);
+        HashTable* table = CREATE_TABLE(table, print_str, cmp_str, del_str, asm_crc32_hash, validate_level_t::MEDIUM_VALIDATE, CAPACITY_VALUES[1]);
 
         clock_t start_time = clock();
                 context    = load_strings_to_table(table, filename, 0);
@@ -126,11 +167,10 @@ int test_table_speed(const char* filename, int repeats, double fi_coef) {
             int need_inserts = (int) (context->inserts * fi_coef) - context->finds;
 
             char* word = (char*) calloc(ALLIGENCE, sizeof(char));
+                  word = random_word(word, rand() % ALLIGENCE + 1);
             for ( ; need_inserts > 0; need_inserts--) {
-                word = random_word(word, rand() % ALLIGENCE + 1);
-
                 start_time = clock();
-                table_find(table, word);
+                table_find(table, &word);
                 end_time   = clock();
 
                 context->finds++;
@@ -162,7 +202,7 @@ int test_func_collision(const char* filename, const HashFunc* hash, const char* 
     ASSERT_IF(VALID_PTR(filename), "Invalid filename ptr", 0);
     ASSERT_IF(VALID_PTR(hash),     "Invalid hash ptr",     0);
 
-    HashTable*   table   = CREATE_TABLE(table, hash->func, validate_level_t::WEAK_VALIDATE, CAPACITY_VALUES[1]);
+    HashTable*   table   = CREATE_TABLE(table, print_str, cmp_str, del_str, hash->func, validate_level_t::MEDIUM_VALIDATE, CAPACITY_VALUES[1]);
     LoadContext* context = load_strings_to_table(table, filename, 1);
 
     CollisionData* data  = get_collision_info(table);

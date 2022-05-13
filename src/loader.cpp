@@ -39,8 +39,8 @@ LoadContext* load_strings_to_table(HashTable* table, const char* filename, int f
             word = storage + st_ind * ALLIGENCE;
             st_ind += (i - start) / 32 + 1;
 
-            if (force_insert || table_find(table, word) == NOT_FOUND) {
-                table_add(table, word);
+            if (force_insert || table_find(table, &word) == NOT_FOUND) {
+                table_add(table, &word);
                 ctx->inserts++;
             }
 

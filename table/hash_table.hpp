@@ -40,6 +40,8 @@
         var = table_ctor(info, args);                                   \
     } while (0) /* For ';' requirement */
 
+typedef char* item_t;
+
 const long unsigned INIT_CANARY  = 0x5AFEA2EA; // SAFE AREA
 const long unsigned FREE_CANARY  = 0xDEADA2EA; // DEAD AREA
 const long unsigned NO_INFO_PTR  = 0x5015F0;   // NO INFO
@@ -63,7 +65,10 @@ struct HashTable {
     validate_level_t   _vlevel  = validate_level_t::NO_VALIDATE;
     HashInfo*          _info    = (HashInfo*) poisons::UNINITIALIZED_PTR;
 
-    unsigned long long (*_hash) (char* string) = (unsigned long long (*) (char*)) poisons::UNINITIALIZED_PTR;
+    int                (*_pf)   (item_t* item)                 = (int (*) (item_t*))                poisons::UNINITIALIZED_PTR;
+    int                (*_cmp)  (item_t* item1, item_t* item2) = (int (*) (item_t*, item_t*))       poisons::UNINITIALIZED_PTR;
+    int                (*_del)  (item_t* item)                 = (int (*) (item_t*))                poisons::UNINITIALIZED_PTR;
+    unsigned long long (*_hash) (item_t* item)                 = (unsigned long long (*) (item_t*)) poisons::UNINITIALIZED_PTR;
 
     List*   data        = (List*)poisons::UNINITIALIZED_PTR;
     int     size        = poisons::UNINITIALIZED_INT;
@@ -75,35 +80,42 @@ struct HashTable {
 enum hashtable_errors {
     INVALID_TABLE_PTR       = -1,
     INVALID_TABLE_INFO_PTR  = -2,
-    INVALID_HASH_FUNC_PTR   = -3,
-    INVALID_DATA_PTR        = -4,
-    INVALID_LIST            = -5,
+    INVALID_PRINT_ITEM_PTR  = -3,
+    INVALID_CMP_ITEMS_PTR   = -4,
+    INVALID_HASH_FUNC_PTR   = -5,
+    INVALID_DATA_PTR_       = -6,
+    INVALID_LIST            = -7,
 
-    DAMAGED_LCANARY         = -6,
-    DAMAGED_RCANARY         = -7,
-    FREED_CANARY_VALUE      = -8,
+    DAMAGED_LCANARY         = -8,
+    DAMAGED_RCANARY         = -9,
+    FREED_CANARY_VALUE      = -10,
 
-    NOT_ENOUGH_MEMORY_      = -9,
-    SIZE_EXCEEDED_CAPACITY_ = -10,
+    NOT_ENOUGH_MEMORY_      = -12,
+    SIZE_EXCEEDED_CAPACITY_ = -13,
 
     OK_ = 0,
 };
 
-int print_str   (char* string);
-unsigned long long default_hash(char* string);
+int                 default_print(item_t* item);
+int                 default_cmp  (item_t* item1, item_t* item2);
+int                 default_del  (item_t* item);
+unsigned long long  default_hash (item_t* item);
 
-HashTable* table_ctor(HashInfo*             info                      = nullptr,
-                      unsigned long long  (*hash_func) (char* string) = default_hash,
-                      validate_level_t      level                     = VALIDATE_LEVEL,
-                      int                   capacity                  = CAPACITY_VALUES[0]
+HashTable* table_ctor(HashInfo*            info                                     = nullptr,
+                      int                (*print_func)(item_t* item)                = default_print,
+                      int                (*cmp_func)  (item_t* item1, item_t* item2)= default_cmp,
+                      int                (*del_func)  (item_t* item)                = default_del,
+                      unsigned long long (*hash_func) (item_t* item)                = default_hash,
+                      validate_level_t     level                                    = VALIDATE_LEVEL,
+                      int                  capacity                                 = CAPACITY_VALUES[0]
                      );
 HashTable* table_dtor(HashTable* table);
 
 hashtable_errors table_error     (const HashTable*       table);
 const char*      table_error_desc(const hashtable_errors error_code);
 
-int table_add (      HashTable* table, char* string);
-int table_find(const HashTable* table, char* string);
+int table_add (      HashTable* table, item_t* item);
+int table_find(const HashTable* table, item_t* item);
 
 int table_rehash(    HashTable* table, int new_capacity=OLD_CAPACITY);
 int get_next_capacity(int capacity);
