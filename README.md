@@ -3,8 +3,6 @@
 <br><br><br>
 
 ## Введение
-Для ознакомления со статьей читатель должен иметь базовые представления о хеш-таблицах, хеш-функциях, синтаксисе языка `С` и ассемблера `NASM`.
-
 Целью данной работы является разработка словаря для хранения массива строк и дальнейшего поиска по словарю. В качестве словаря будет использоваться хеш-таблица со списками, реализованными под хранение строк.
 
 После реализации структуры данных предстоит провести анализ и выбрать хеш-функцию, которая лучше всего подойдет для нашего usecase. Затем нашей задачей будет замерить время работы хеш-функции и попытаться максимально ее оптимизировать, стараясь при этом сохранить переносимость программы на другие устройства.
@@ -21,8 +19,7 @@
 
 Из этих соображений имеем следующую структуру таблицы.
 ```c++
-typedef unsigned long long  ull;
-typedef validate_level      validate;
+typedef char* item_t;
 
 const long unsigned INIT_CANARY  = 0x5AFEA2EA; // SAFE AREA
 
@@ -35,21 +32,24 @@ struct HashInfo {
 };
 
 struct HashTable {
-    ull        _lcanary = INIT_CANARY;
-    validate   _vlevel  = validate::NO_VALIDATE;
-    HashInfo*  _info    = (HashInfo*) poisons::UNINITIALIZED_PTR;
+    unsigned long long _lcanary = INIT_CANARY;
+    validate_level_t   _vlevel  = validate_level_t::NO_VALIDATE;
+    HashInfo*          _info    = (HashInfo*) poisons::UNINITIALIZED_PTR;
 
-    ull (*_hash) (char* string) = (ull (*) (char*)) poisons::UNINITIALIZED_PTR;
+    int                (*_pf)   (item_t* item)                 = (int (*) (item_t*))                poisons::UNINITIALIZED_PTR;
+    int                (*_cmp)  (item_t* item1, item_t* item2) = (int (*) (item_t*, item_t*))       poisons::UNINITIALIZED_PTR;
+    int                (*_del)  (item_t* item)                 = (int (*) (item_t*))                poisons::UNINITIALIZED_PTR;
+    unsigned long long (*_hash) (item_t* item)                 = (unsigned long long (*) (item_t*)) poisons::UNINITIALIZED_PTR;
 
     List*   data        = (List*)poisons::UNINITIALIZED_PTR;
     int     size        = poisons::UNINITIALIZED_INT;
     int     capacity    = poisons::UNINITIALIZED_INT;
 
-    ull        _rcanary = INIT_CANARY;
+    unsigned long long _rcanary = INIT_CANARY;
 };
 ```
 
-Для удобства определяем несколько `typedef`, а все поля проинициализируем специальными ядовитыми значениями, чтобы в случае ошибок можно было увидеть, менялись ли значения этих полей с начальных.
+Все поля проинициализируем специальными ядовитыми значениями, чтобы в случае ошибок можно было увидеть, менялись ли значения этих полей с начальных.
 
 Канареек поставим от случайного выхода за границы массива и порчи данных структуры (вовсе не для него).
 
@@ -58,35 +58,7 @@ struct HashTable {
 </p>
 <br>
 
-Также добавим в структуру уровень валидации для управления проверками при работе таблицы, поле со структурой информации о таблице (откуда она, как называется и пр.) и поле для хеш-функции, с помощью которой таблица будет работать (чтобы не нагружать функции доп аргументом в виде хеш-функции).
-
-Из функций наша таблица будет иметь:
-1. Конструктор и деструктор.
-```c++
-HashTable* table_ctor(HashInfo*   info                      = nullptr,
-                      ull       (*hash_func) (char* string) = default_hash,
-                      validate    level                     = VALIDATE_LEVEL,
-                      int         capacity                  = CAPACITY_VALUES[0]
-                     );
-HashTable* table_dtor(HashTable* table);
-```
-
-2. Функции для проверок (валидации) таблицы, а также вывод информации о таблице (дамп).
-```c++
-hashtable_errors table_error     (const HashTable*       table);
-const char*      table_error_desc(const hashtable_errors error_code);
-
-int table_dump(const HashTable* table, const char* reason, FILE* log=stdout);
-```
-
-3. Необходимые для работы функции вставки, поиска, а также для увлечения размера, чтобы хеш-функции лучше работали.
-```c++
-int table_add (      HashTable* table, char* string);
-int table_find(const HashTable* table, char* string);
-
-int table_rehash(    HashTable* table, int new_capacity=OLD_CAPACITY);
-int get_next_capacity(int capacity);
-```
+Также добавим в структуру уровень валидации для управления проверками при работе таблицы, поле со структурой информации о таблице (откуда она, как называется и пр.), поле для хеш-функции, с помощью которой таблица будет работать, а также поля с функциями для печати, сравнения и удаления элементов, (чтобы не нагружать функции доп аргументами).
 <br><br><br>
 
 ## Выбор хеш-функции
@@ -118,7 +90,7 @@ int test_func_collision(const char* filename, const HashFunc* hash, const char* 
     ASSERT_IF(VALID_PTR(filename), "Invalid filename ptr", 0);
     ASSERT_IF(VALID_PTR(hash),     "Invalid hash ptr",     0);
 
-    HashTable*   table   = CREATE_TABLE(table, hash->func, validate::WEAK_VALIDATE, CAPACITY_VALUES[1]);
+    HashTable*   table   = CREATE_TABLE(table, print_str, cmp_str, del_str, hash->func, validate_level_t::NO_VALIDATE, CAPACITY_VALUES[1]);
     LoadContext* context = load_strings_to_table(table, filename, 1);
 
     CollisionData* data  = get_collision_info(table);
@@ -263,8 +235,8 @@ int test_table_speed(const char* filename, int repeats, double fi_coef) {
     LoadContext* context = nullptr;
 
     for (int i = 0; i < repeats; i++) {
-        HashTable* table = CREATE_TABLE(table, crc32_hash_asm, validate::MEDIUM_VALIDATE, CAPACITY_VALUES[1]);
-
+        HashTable* table = CREATE_TABLE(table, print_str, cmp_str, del_str, crc32_hash, validate_level_t::MEDIUM_VALIDATE, CAPACITY_VALUES[1]);
+        
         clock_t start_time = clock();
                 context    = load_strings_to_table(table, filename, 0);
         clock_t end_time   = clock();
@@ -309,31 +281,9 @@ int test_table_speed(const char* filename, int repeats, double fi_coef) {
 ```
 <br>
 
-С самого начала имеем результат:
-```
-=============== Speed test ===============
-repeats:  20
+Теперь отключаем все проверки, чтобы они не влияли на время работы. `table_error` отключить очень просто - достаточно передать в таблицу уровень валидации `validate::NO_VALIDATE`, при котором в таблице отключаются проверки.
 
-time avg: 1.302874 sec
-
-finds:    37430
-inserts:  3743
-fi coef:  10.000000
-==========================================
-```
-
-Приступим к оптимизациям!
-
-![hippo](https://github.com/IvanBrekman/Hash_Table/blob/main/data/images/cat_proger_gif.gif)
-<br>
-
-### Оптимизация 1
-Посмотрим вывод KCacheGrind.
-![image](https://github.com/IvanBrekman/Hash_Table/blob/main/data/images/opt1_checks.png)
-
-Первое, что сразу бросилось в глаза - функции `isbadreadptr` и `table_error`, которые являются проверочными, и в релизе они не нужны. `table_error` отключить очень просто - достаточно передать в таблицу уровень валидации `validate::NO_VALIDATE`, при котором в таблице отключаются проверки.
-
-С `isbadreadptr` сложнее. Эта функция используется для проверок указателей в начале каждой функции с помощью конструкции `ASSERT_IF`.
+Также надо отключить конструкцию `ASSERT_IF`.
 
 ```c++
 #define ASSERT_IF(cond, text, ret) do {                                             \
@@ -348,7 +298,7 @@ fi coef:  10.000000
 
 Как видно, просто отключить `assert` не достаточно, поэтому добавим define `NO_CHECKS` при котором будем отключать весь `ASSERT_IF`. Таким образом получим аналог `#define NDEBUG`.
 
-Проделав небольшие изменения в коде смотрим на результаты.
+С самого начала имеем результат:
 ```
 =============== Speed test ===============
 repeats:  100
@@ -361,11 +311,13 @@ fi coef:  10.000000
 ==========================================
 ```
 
-Ускорение в 270 раз? Звучит на нобелевку, но это всего лишь отключение всех проверок. Идем дальше.
-<br><br>
+Приступим к оптимизациям!
 
-### Оптимизация 2
-Анализируем новый вывод KCacheGrind.
+![hippo](https://github.com/IvanBrekman/Hash_Table/blob/main/data/images/cat_proger_gif.gif)
+<br>
+
+### Оптимизация 1
+Анализируем вывод KCacheGrind.
 ![image](https://github.com/IvanBrekman/Hash_Table/blob/main/data/images/opt2_split.png)
 
 Сверху списка замечаем вызовы `random`, которые нас не интересуют, так как они используются для генерации рандомных слов для дополнительных поисков в таблице и на ее скорость никак не влияют. После них видим функцию `calloc_s`, которая занимается выделением памяти под указатели.
@@ -439,7 +391,7 @@ fi coef:  10.000000
 Оптимизация сделала таблицу быстрее в 1.4 раза. Отличный результат на таком времени работы! Продолжаем.
 <br><br>
 
-### Оптимизация 3
+### Оптимизация 2
 Смотрим в наш любимый вывод KCacheGrind.
 ![image](https://github.com/IvanBrekman/Hash_Table/blob/main/data/images/opt3_hash.png)
 
@@ -452,8 +404,10 @@ fi coef:  10.000000
 Таким образом имеем новую реализацию хеш-функции, использующую процессорную команду `crc32`.
 
 ```c++
-ull crc32_hash_asm(char* string) {
-    ull hash = 0;
+unsigned long long asm_len32_crc32_hash(item_t* item) {
+    char* string = *item;
+
+    unsigned long long hash = 0;
 
     __asm__(
         ".intel_syntax noprefix     \n\t"
@@ -471,7 +425,7 @@ ull crc32_hash_asm(char* string) {
         ".att_syntax prefix         \n\t"
 
         : [ret_val]"=r"(hash)
-        : [arg_val]"r"(string)
+        : [arg_val]"S"(string)
         : "%rax", "%rcx"
     );
 
@@ -497,23 +451,21 @@ fi coef:  10.000000
 ![hippo](https://journals.ru/smile/users/13/125/12478.gif)
 <br><br>
 
-### Оптимизация 4
+### Оптимизация 3
 Вы знаете, с чего мы начинаем.
 ![image](https://github.com/IvanBrekman/Hash_Table/blob/main/data/images/opt4_find.png)
 
 Как видно нагрузка хеш-функции сильно упала, так что теперь время заняться функцией `list_find`. Начнем с просмотра листинга этой функции.
 ![image](https://github.com/IvanBrekman/Hash_Table/blob/main/data/images/opt4_strcmp.png)
 
-Становится понятно, что основное время работы функции уходит на `strcmp`. Займемся ее улучшением. Здесь у нас будет схожая логика рассуждений. Мы уже имеем данные, которые точно укладываются в 32 байта. В этот раз, для разнообразия, будем использовать не ассемблерную вставку, а реализацию через `intrinsic` функции. Пользуясь 256-разрядными регистрами, которые содержат `256/8=32` байта мы сможем за 1 команду сравнить сразу 2 полных слова!
-
-Это ли не магия? На самом деле, эти 2 подхода очень похожи, потому что `intrinsic` функция при компиляции превращается в соответствующую команду ассемблера, так что на выходе мы будем иметь почти что ассемблерную вставку (разве что будет чуть больше команд `mov`), но такой код будет более переносимым, чем прямая ассемблерная вставка.
+Становится понятно, что основное время работы функции уходит на `strcmp`. Займемся ее улучшением. Здесь у нас будет схожая логика рассуждений. Мы уже имеем данные, которые точно укладываются в 32 байта. Будем использовать не ассемблерную вставку, а реализацию через `intrinsic` функции. Пользуясь 256-разрядными регистрами, которые содержат `256/8=32` байта мы сможем за 1 команду сравнить сразу 2 полных слова! Это ли не магия?
 
 Вашему вниманию новая функция для сравнения строк.
 
 ```c++
-int strcmp_avx(char* string1, char* string2) {
-    __m256i str1 = _mm256_lddqu_si256((const __m256i*) string1);
-    __m256i str2 = _mm256_lddqu_si256((const __m256i*) string2);
+int strcmp_avx_32len(item_t* item1, item_t* item2) {
+    __m256i str1 = _mm256_lddqu_si256((const __m256i*) *item1);
+    __m256i str2 = _mm256_lddqu_si256((const __m256i*) *item2);
 
     __m256i res  = _mm256_cmpeq_epi8(str1, str2);
 
