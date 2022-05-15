@@ -166,7 +166,7 @@ int table_find(const HashTable* table, item_t* item) {
 int table_rehash(HashTable* table, int new_capacity) {
     ASSERT_OK_HASHTABLE(table, "Check before table_rehash func", 0);
 
-    LOG2(PRINT_WARNING("Table rehash\n"););
+    LOG2(APRINT_WARNING("Table rehash (%d)\n", new_capacity););
 
 
     HashTable* new_table = CREATE_TABLE(new_table,   table->_pf, table->_cmp, table->_del, table->_hash, table->_vlevel,
@@ -176,7 +176,7 @@ int table_rehash(HashTable* table, int new_capacity) {
         List* lst = table->data + i;
 
         for (int j = 0; j < lst->size; j++) {
-            table_add(new_table, (list_t*) lst->data[j]);
+            table_add(new_table, (item_t*) (lst->data + j));
         }
     }
 
@@ -208,7 +208,7 @@ int get_next_capacity(int capacity) {
     }
 
     int next_cap = CAPACITY_VALUES[size - 1];
-    while (capacity > next_cap) next_cap *= 2;
+    while (capacity >= next_cap) next_cap *= 2;
 
     return next_cap;
 }

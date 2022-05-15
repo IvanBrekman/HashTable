@@ -8,10 +8,10 @@
 #define VALIDATE_LEVEL      validate_level_t::NO_VALIDATE
 #define EXECUTE_WAITINGS    0
 
-#define LOG_PRINTF          0
-#define AUTO_DRAW           0
+#define LOG_PRINTF          2
+#define AUTO_DRAW           1
 
-#define TEST_SPEED
-#define NO_CHECKS
+#define TEST_SPEE
+#define NO_CHECK
 
 #endif // CONFIG

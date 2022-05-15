@@ -193,7 +193,7 @@ enum validate_level_t {
 };
 
 enum poisons {
-    UNINITIALIZED_PTR =  6,
+    UNINITIALIZED_PTR = 0xBAD111,
     UNINITIALIZED_INT = -1 * (0xBAD666),
 
     FREED_ELEMENT     = -1 * (0xBAD667),

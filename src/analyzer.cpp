@@ -96,7 +96,7 @@ unsigned long long crc32_hash(item_t* item) {
     return (unsigned long long) crc32(*item, (DWORD)strlen(*item));
 }
 
-static __attribute__((always_inline)) unsigned long long asm_crc32_hash(item_t* item) {
+unsigned long long asm_len32_crc32_hash(item_t* item) {
     char* string = *item;
 
     unsigned long long hash = 0;
@@ -155,7 +155,7 @@ int test_table_speed(const char* filename, int repeats, double fi_coef) {
     LoadContext* context = nullptr;
 
     for (int i = 0; i < repeats; i++) {
-        HashTable* table = CREATE_TABLE(table, print_str, cmp_str, del_str, asm_crc32_hash, validate_level_t::MEDIUM_VALIDATE, CAPACITY_VALUES[1]);
+        HashTable* table = CREATE_TABLE(table, print_str, strcmp_avx_32len, del_str, asm_len32_crc32_hash, validate_level_t::MEDIUM_VALIDATE, CAPACITY_VALUES[1]);
 
         clock_t start_time = clock();
                 context    = load_strings_to_table(table, filename, 0);
@@ -202,7 +202,7 @@ int test_func_collision(const char* filename, const HashFunc* hash, const char* 
     ASSERT_IF(VALID_PTR(filename), "Invalid filename ptr", 0);
     ASSERT_IF(VALID_PTR(hash),     "Invalid hash ptr",     0);
 
-    HashTable*   table   = CREATE_TABLE(table, print_str, cmp_str, del_str, hash->func, validate_level_t::MEDIUM_VALIDATE, CAPACITY_VALUES[1]);
+    HashTable*   table   = CREATE_TABLE(table, print_str, cmp_str, del_str, hash->func, validate_level_t::NO_VALIDATE, CAPACITY_VALUES[1]);
     LoadContext* context = load_strings_to_table(table, filename, 1);
 
     CollisionData* data  = get_collision_info(table);

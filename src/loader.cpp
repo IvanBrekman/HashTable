@@ -16,7 +16,6 @@ LoadContext* load_strings_to_table(HashTable* table, const char* filename, int f
     char* data    = get_raw_text(filename);
 
     char* storage = NEW_PTR(char, STORAGE_SIZE * ALLIGENCE);
-    //char* storage = (char*) aligned_alloc(ALLIGENCE, STORAGE_SIZE * ALLIGENCE * sizeof(char));
     
     int   st_ind  = 0;
 

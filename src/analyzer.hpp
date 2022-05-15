@@ -25,7 +25,7 @@ struct CollisionData {
 // ==================== Prototypes ====================
 int print_str       (item_t* item);
 int cmp_str         (item_t* item1, item_t* item2);
-int strcmp_avx_32len(item_t* item1, item_t* item2);
+static __attribute__((always_inline)) int strcmp_avx_32len(item_t* item1, item_t* item2);
 int del_str         (item_t* item);
 
 char* random_word(char* word, int len);
@@ -53,8 +53,7 @@ const HashFunc ALL_HASH_FUNCS[]  = {
     { symbol_sum_hash,      "Symbols sum hash"  },
     { string_len_hash,      "String len hash"   },
     { roll_hash,            "Roll hash"         },
-    { crc32_hash,           "Crc32 hash"        },
-    { asm_len32_crc32_hash, "Assembler crc32"   }
+    { crc32_hash,           "Crc32 hash"        }
 };
 // ================================================
 

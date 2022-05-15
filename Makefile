@@ -1,4 +1,4 @@
-args = `arg="$(filter-out $@,$(MAKECMDGOALS))" && echo $${arg:-${1}}`
+args = $(filter-out $@,$(MAKECMDGOALS))
 
 OUT_FILE = main.out
 
@@ -9,7 +9,7 @@ PROFILE_OUT 	 = $(PROFILE_OUT_DIR)/$(PROFILE_OUT_FILE).$(ID)
 LIBS		= libs/baselib.cpp table/list.cpp
 SRC_FILES   =  src/loader.cpp    src/analyzer.cpp
 
-OPTIONS		= -o $(OUT_FILE) -I . -Ofast -g -no-pie -march=native
+OPTIONS		= -o $(OUT_FILE) -I . -O2 -g -no-pie -march=native
 
 ID 			= $(shell python3 logs/id_script.py $(PROFILE_OUT_FILE) --dir=$(PROFILE_OUT_DIR))
 
@@ -36,5 +36,5 @@ vc:
 	kcachegrind $(PROFILE_OUT)
 
 pyc:
-	python3 data/clear_text.py $(args)
+	python3 data/clear_text.py data/text/$(args)
 # =============================================================================

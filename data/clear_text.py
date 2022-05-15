@@ -18,7 +18,7 @@ def clear_file(filename: str) -> None:
     for line in lines:
         line = line.strip().lower()
         line = " ".join(line.split())
-        line = "". join(filter(lambda sym: sym.isalnum() or sym == " ", line))
+        line = "". join(filter(lambda sym: sym.isalpha() or sym in " -", line))
 
         new_data += line.split()
     

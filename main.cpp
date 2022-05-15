@@ -5,14 +5,14 @@
 
 const char* PYTHON_SCRIPT   = "python3 data/graph/draw_graph.py info.txt graph.png --dir=data/graph/";
 
-const char* LOAD_FILE       = "data/shakespear_cleared.txt";
-const char* LOAD_SET_FILE   = "data/shakespear_cleared++.txt";
+const char* LOAD_FILE       = "data/text/shakespear_cleared.txt";
+const char* LOAD_SET_FILE   = "data/text/shakespear_cleared++.txt";
 const char* SAVE_FILE       = "data/graph/info.txt";
 
 int main(int argc, char** argv) {
     const char* filename = argc > 1 ? argv[1] : LOAD_FILE;
 
-    test_table_speed(filename, 1, 100);
+    test_table_speed(filename);
 
 #ifdef TEST_SPEED
     return 0;

@@ -16,24 +16,29 @@ def draw_graph(src: str, dest: str) -> None:
     with open(src, mode="r") as src_file:
         data        = src_file.readlines()
         rows, cols  = ceil(len(data) / NCOL) + 1, NCOL
-
-    fig = plt.figure(figsize=(20, 5 * rows))
+    
+    plt.rcParams['font.size'] = "32"
 
     coefs  = [ ]
     for i, note in enumerate(data, 1):
+        fig = plt.figure(figsize=(20, 5 * rows))
+
         name, values, coef = note.split(";")
 
         values = np.array(list(map(int, values.split())))
 
         coefs.append(float(coef))
 
-        ax = fig.add_subplot(rows, cols, i)
-        ax.set_title(f"{i}. " + name, size=25)
+        ax = fig.add_subplot(1, 1, 1)
+        ax.set_title(f"{i}. " + name)
 
         plt.bar(np.arange(0, len(values)), values, width=1)
+        plt.savefig(dest + str(i) + ".png")
     
-    ax = fig.add_subplot(rows, cols, rows * cols - 1)
-    ax.set_title("Collision coefficient", size=25)
+    fig = plt.figure(figsize=(20, 5 * rows))
+    
+    ax = fig.add_subplot(1, 1, 1)
+    ax.set_title("Collision coefficient")
 
     plt.bar(range(len(coefs)), coefs, width=1)
     plt.xticks(range(len(coefs)), range(1, len(coefs) + 1))
@@ -41,7 +46,7 @@ def draw_graph(src: str, dest: str) -> None:
     for i in range(len(coefs)):
         plt.text(i, coefs[i], f"{coefs[i]:.2f}")
 
-    plt.savefig(dest)
+    plt.savefig(dest + ".png")
 
 
 if __name__ == "__main__":
