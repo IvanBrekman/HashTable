@@ -21,7 +21,7 @@ def draw_graph(src: str, dest: str) -> None:
 
     coefs  = [ ]
     for i, note in enumerate(data, 1):
-        fig = plt.figure(figsize=(20, 5 * rows))
+        fig = plt.figure(figsize=(20, 10))
 
         name, values, coef = note.split(";")
 
@@ -35,7 +35,8 @@ def draw_graph(src: str, dest: str) -> None:
         plt.bar(np.arange(0, len(values)), values, width=1)
         plt.savefig(dest + str(i) + ".png")
     
-    fig = plt.figure(figsize=(20, 5 * rows))
+    fig = plt.figure(figsize=(20, 10))
+    plt.rcParams['font.size'] = "25"
     
     ax = fig.add_subplot(1, 1, 1)
     ax.set_title("Collision coefficient")
