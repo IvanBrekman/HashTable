@@ -32,6 +32,9 @@ def draw_graph(src: str, dest: str) -> None:
         ax = fig.add_subplot(1, 1, 1)
         ax.set_title(f"{i}. " + name)
 
+        ax.vlines(0,           0, values.max(), color = 'b', linewidth = 3, linestyle = '--')
+        ax.vlines(len(values), 0, values.max(), color = 'b', linewidth = 3, linestyle = '--')
+
         plt.bar(np.arange(0, len(values)), values, width=1)
         plt.savefig(dest + str(i) + ".png")
     

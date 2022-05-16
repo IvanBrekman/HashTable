@@ -59,7 +59,7 @@ char* random_word(char* word, int len) {
 }
 
 unsigned long long constant_hash(item_t* item) {
-    return 1;
+    return 50;
 }
 
 unsigned long long first_letter_hash(item_t* item) {
