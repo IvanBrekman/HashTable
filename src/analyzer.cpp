@@ -175,7 +175,7 @@ int test_table_speed(const char* filename, int repeats, double fi_coef) {
     LoadContext* context = nullptr;
 
     for (int i = 0; i < repeats; i++) {
-        HashTable* table = CREATE_TABLE(table, print_str, cmp_str, del_str, crc32_hash, validate_level_t::NO_VALIDATE, CAPACITY_VALUES[1]);
+        HashTable* table = CREATE_TABLE(table, print_str, avx_len32_cmp_str, del_str, asm_len32_crc32_hash, validate_level_t::NO_VALIDATE, CAPACITY_VALUES[1]);
 
         uint64_t start_time = rdtsc();
                 context     = load_strings_to_table(table, filename, 0);
