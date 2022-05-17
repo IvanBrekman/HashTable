@@ -115,7 +115,12 @@ hashtable_errors table_error     (const HashTable*       table);
 const char*      table_error_desc(const hashtable_errors error_code);
 
 int table_add (      HashTable* table, item_t* item);
-int table_find(const HashTable* table, item_t* item);
+
+#ifndef USE_TABLE_FIND_OPT
+                int table_find(const HashTable* table, item_t* item);
+#else
+    extern "C"  int table_find(const HashTable* table, item_t* item);
+#endif
 
 int table_rehash(    HashTable* table, int new_capacity=OLD_CAPACITY);
 int get_next_capacity(int capacity);

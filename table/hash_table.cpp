@@ -153,15 +153,22 @@ int table_add(HashTable* table, item_t* item) {
     return res >= 0;
 }
 
-int table_find(const HashTable* table, item_t* item) {
-    ASSERT_OK_HASHTABLE(table,   "Check before find function", NOT_FOUND);
-    ASSERT_IF(VALID_PTR(item),   "Invalid item ptr",           NOT_FOUND);
+#ifndef USE_TABLE_FIND_OPT
+    extern "C" int list_find_asm(List* lst, list_t* item);
+    int table_find(const HashTable* table, item_t* item) {
+        ASSERT_OK_HASHTABLE(table,   "Check before find function", NOT_FOUND);
+        ASSERT_IF(VALID_PTR(item),   "Invalid item ptr",           NOT_FOUND);
 
-    unsigned long long hash = table->_hash(item) % table->capacity;
-    ASSERT_IF(hash < table->capacity, "Hash exceeded table capacity. Hash should be < table->capacity", NOT_FOUND);
+        unsigned long long hash = table->_hash(item) % table->capacity;
+        ASSERT_IF(hash < table->capacity, "Hash exceeded table capacity. Hash should be < table->capacity", NOT_FOUND);
 
-    return list_find(table->data + hash, item);
-}
+        #ifndef USE_LIST_FIND_OPT
+            return list_find    (table->data + hash, item);
+        #else
+            return list_find_asm(table->data + hash, item);
+        #endif
+    }
+#endif
 
 int table_rehash(HashTable* table, int new_capacity) {
     ASSERT_OK_HASHTABLE(table, "Check before table_rehash func", 0);

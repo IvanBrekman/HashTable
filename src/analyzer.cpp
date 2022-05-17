@@ -3,7 +3,7 @@
 //
 
 #include <cstring>
-#include <ctime>
+#include <inttypes.h>
 #include <immintrin.h>
 
 #define  ADD_CRC32
@@ -12,6 +12,12 @@
 #include "loader.hpp"
 
 #include "analyzer.hpp"
+
+inline unsigned long long rdtsc() {
+	unsigned int lo, hi;
+	asm volatile ( "rdtsc\n" : "=a" (lo), "=d" (hi) );
+	return ((unsigned long long)hi << 32) | lo;
+}
 
 int print_str(item_t* item) {
     ASSERT_IF(VALID_PTR(*item), "Invalid *item ptr", 0);
@@ -28,7 +34,7 @@ int cmp_str(item_t* item1, item_t* item2) {
     return strcmp(*item1, *item2);
 }
 
-int strcmp_avx_32len(item_t* item1, item_t* item2) {
+int avx_len32_cmp_str(item_t* item1, item_t* item2) {
     __m256i str1 = _mm256_lddqu_si256((const __m256i*) *item1);
     __m256i str2 = _mm256_lddqu_si256((const __m256i*) *item2);
 
@@ -147,19 +153,33 @@ CollisionData* get_collision_info(HashTable* table) {
     return data;
 }
 
+int print_time(uint64_t time) {
+    char* str_num = to_string(time);
+    int   size    = digits_number(time);
+
+    for (int i = 0; size > 0; i++, size--) {
+        if (size % 3 == 0 && i != 0) printf("_");
+        printf("%c", str_num[i]);
+    }
+
+    FREE_PTR(str_num, char);
+
+    return 1;
+}
+
 int test_table_speed(const char* filename, int repeats, double fi_coef) {
     ASSERT_IF(VALID_PTR(filename), "Invalid filename ptr", 0);
 
-    clock_t sum_time = 0;
+    uint64_t sum_time = 0;
 
     LoadContext* context = nullptr;
 
     for (int i = 0; i < repeats; i++) {
-        HashTable* table = CREATE_TABLE(table, print_str, strcmp_avx_32len, del_str, asm_len32_crc32_hash, validate_level_t::MEDIUM_VALIDATE, CAPACITY_VALUES[1]);
+        HashTable* table = CREATE_TABLE(table, print_str, avx_len32_cmp_str, del_str, asm_len32_crc32_hash, validate_level_t::NO_VALIDATE, CAPACITY_VALUES[1]);
 
-        clock_t start_time = clock();
-                context    = load_strings_to_table(table, filename, 0);
-        clock_t end_time   = clock();
+        uint64_t start_time = rdtsc();
+                context     = load_strings_to_table(table, filename, 0);
+        uint64_t end_time   = rdtsc();
 
         sum_time += end_time - start_time;
 
@@ -167,14 +187,24 @@ int test_table_speed(const char* filename, int repeats, double fi_coef) {
             int need_inserts = (int) (context->inserts * fi_coef) - context->finds;
 
             char* word = (char*) calloc(ALLIGENCE, sizeof(char));
-                  word = random_word(word, rand() % ALLIGENCE + 1);
+                  word = random_word(word, ALLIGENCE - 1);
+
             for ( ; need_inserts > 0; need_inserts--) {
-                start_time = clock();
+                start_time = rdtsc();
                 table_find(table, &word);
-                end_time   = clock();
+                table_find(table, &word);
+                table_find(table, &word);
+                table_find(table, &word);
+                table_find(table, &word);
+                table_find(table, &word);
+                table_find(table, &word);
+                table_find(table, &word);
+                table_find(table, &word);
+                table_find(table, &word);
+                end_time   = rdtsc();
 
                 context->finds++;
-                sum_time += end_time - start_time;
+                sum_time += (end_time - start_time) / 10;
             }
             FREE_PTR(word, char);
         }
@@ -187,7 +217,7 @@ int test_table_speed(const char* filename, int repeats, double fi_coef) {
     
     printf("=============== Speed test ===============\n");
     printf("repeats:  %d\n\n", repeats);
-    printf("time avg: %lf sec\n\n", ((double)sum_time / repeats) / CLOCKS_PER_SEC);
+    printf("time avg: "); print_time(sum_time / repeats); printf(" ticks\n\n");
     printf("finds:    %d\n",  context->finds);
     printf("inserts:  %d\n",  context->inserts);
     printf("fi coef:  %lf\n", (double)context->finds / context->inserts);

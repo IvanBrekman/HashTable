@@ -23,10 +23,10 @@ struct CollisionData {
 };
 
 // ==================== Prototypes ====================
-int print_str       (item_t* item);
-int cmp_str         (item_t* item1, item_t* item2);
-static __attribute__((always_inline)) int strcmp_avx_32len(item_t* item1, item_t* item2);
-int del_str         (item_t* item);
+int print_str        (item_t* item);
+int cmp_str          (item_t* item1, item_t* item2);
+int avx_len32_cmp_str(item_t* item1, item_t* item2);
+int del_str          (item_t* item);
 
 char* random_word(char* word, int len);
 
@@ -37,7 +37,7 @@ unsigned long long string_len_hash  (item_t* item);
 unsigned long long roll_hash        (item_t* item);
 unsigned long long crc32_hash       (item_t* item);
 
-static __attribute__((always_inline)) unsigned long long asm_len32_crc32_hash(item_t* item);
+unsigned long long asm_len32_crc32_hash(item_t* item);
 
 CollisionData* get_collision_info (HashTable* table);
 int            test_table_speed   (const char* filename, int repeats=1, double fi_coef=0);

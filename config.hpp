@@ -11,7 +11,10 @@
 #define LOG_PRINTF          2
 #define AUTO_DRAW           1
 
-#define TEST_SPEE
-#define NO_CHECK
+#define TEST_SPEED
+#define NO_CHECKS
+
+#define USE_LIST_FIND_OPT
+#define USE_TABLE_FIND_OPT
 
 #endif // CONFIG
