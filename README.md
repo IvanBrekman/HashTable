@@ -261,7 +261,7 @@ int test_table_speed(const char* filename, int repeats, double fi_coef) {
 =============== Speed test ===============
 repeats:  100
 
-time avg: 0.004815 sec
+time avg: 7_587_342 ticks
 
 finds:    37430
 inserts:  3743
@@ -276,7 +276,7 @@ fi coef:  10.000000
 
 ### Оптимизация 1
 Анализируем вывод KCacheGrind.
-![image](https://github.com/IvanBrekman/Hash_Table/blob/main/data/images/opt2_split.png)
+![image](https://github.com/IvanBrekman/Hash_Table/blob/main/data/images/opt1_split.png)
 
 Сверху списка замечаем вызовы `random`, которые нас не интересуют, так как они используются для генерации рандомных слов для дополнительных поисков в таблице и на ее скорость никак не влияют. После них видим функцию `calloc_s`, которая занимается выделением памяти под указатели.
 
@@ -335,18 +335,18 @@ LoadContext* load_strings_to_table(HashTable* table, const char* filename, int f
 
 Упростить, упростили, а ускорили ли? Смотрим.
 ```
-=============== Speed test ===============
-repeats:  100
-
-time avg: 0.003480 sec
-
-finds:    37430
-inserts:  3743
-fi coef:  10.000000
-==========================================
+=============== Speed test ===============                               =============== Speed test ===============
+repeats:  100                                                            repeats:  100
+                                                           __   
+time avg: 7_587_342 ticks                                     \          time avg: 4_487_424 ticks
+                                                    ----------|          
+finds:    37430                                            __ /          finds:    37430
+inserts:  3743                                                           inserts:  3743
+fi coef:  10.000000                                                      fi coef:  10.000000
+==========================================                               ==========================================
 ```
 
-Оптимизация сделала таблицу быстрее в 1.4 раза. Отличный результат на таком времени работы! Продолжаем.
+Оптимизация сделала таблицу быстрее в 1.69 раза. Отличный результат, продолжаем.
 <br><br>
 
 ### Оптимизация 2
