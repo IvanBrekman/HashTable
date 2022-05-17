@@ -175,7 +175,7 @@ int test_table_speed(const char* filename, int repeats, double fi_coef) {
     LoadContext* context = nullptr;
 
     for (int i = 0; i < repeats; i++) {
-        HashTable* table = CREATE_TABLE(table, print_str, avx_len32_cmp_str, del_str, asm_len32_crc32_hash, validate_level_t::NO_VALIDATE, CAPACITY_VALUES[1]);
+        HashTable* table = CREATE_TABLE(table, print_str, cmp_str, del_str, crc32_hash, validate_level_t::NO_VALIDATE, CAPACITY_VALUES[1]);
 
         uint64_t start_time = rdtsc();
                 context     = load_strings_to_table(table, filename, 0);
@@ -218,9 +218,9 @@ int test_table_speed(const char* filename, int repeats, double fi_coef) {
     printf("=============== Speed test ===============\n");
     printf("repeats:  %d\n\n", repeats);
     printf("time avg: "); print_time(sum_time / repeats); printf(" ticks\n\n");
-    printf("finds:    %d\n",  context->finds);
-    printf("inserts:  %d\n",  context->inserts);
-    printf("fi coef:  %lf\n", (double)context->finds / context->inserts);
+    printf("finds:    %d\n",   context->finds);
+    printf("inserts:  %d\n",   context->inserts);
+    printf("fi coef:  %lf\n",  (double)context->finds / context->inserts);
     printf("==========================================\n\n");
 
     FREE_PTR(context, LoadContext);
@@ -253,9 +253,9 @@ int test_func_collision(const char* filename, const HashFunc* hash, const char* 
     printf("=============== Collision test ===============\n");
     printf("func name:     '%s'\n",   hash->func_name);
     printf("collision coef: %lf\n\n", data->coef);
-    printf("finds:          %d\n",  context->finds);
-    printf("inserts:        %d\n",  context->inserts);
-    printf("fi coef:        %lf\n", (double)context->finds / context->inserts);
+    printf("finds:          %d\n",    context->finds);
+    printf("inserts:        %d\n",    context->inserts);
+    printf("fi coef:        %lf\n",   (double)context->finds / context->inserts);
     printf("==============================================\n\n");
 
     FREE_PTR(data->data,       int);
