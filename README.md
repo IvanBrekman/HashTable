@@ -350,7 +350,7 @@ fi coef:  10.000000
 <br><br>
 
 ### Оптимизация 2
-Смотрим в наш любимый вывод KCacheGrind.
+Анализируем новый вывод KCacheGrind.
 ![image](https://github.com/IvanBrekman/HashTable/blob/main/data/images/opt2_hash_x10.png)
 
 В листинге мы замечаем функцию `load_strings_to_table`, что говорит нам о том, что `fi_coef` слишком маленький. Увеличим его значение до 100 и снова сделаем замерим время работы.
@@ -426,7 +426,7 @@ fi coef:  100.000000                                                     fi coef
 <br><br>
 
 ### Оптимизация 3
-Вы знаете, с чего мы начинаем.
+Смотрим в наш любимый вывод KCacheGrind.
 ![image](https://github.com/IvanBrekman/HashTable/blob/main/data/images/opt3_strcmp.png)
 
 Как видно нагрузка хеш-функции сильно упала, так что теперь время заняться функцией `list_find`.
@@ -465,32 +465,146 @@ fi coef:  100.000000                                                     fi coef
 
 Данная оптимизация ускорила программу всего в 1.12 раза. Почему так?
 
-Во-первых, мы оптимизировали самые нагруженные функции, так что логично, что каждый раз польза от оптимизаций будет хуже.
-
-Во-вторых, если еще раз внимательно обратиться к листингу программы:
+Обратимся еще раз внимательно к листингу программы:
 ![image](https://github.com/IvanBrekman/HashTable/blob/main/data/images/opt3_strcmp.png)
 
 То можно увидеть вызовы `__strcmp_avx2`, которая вызывается при работе `strcmp`, что говорит нам о том, что базовая реализация `strcmp` и так оптимизирована.
 <br><br>
 
 ### Оптимизация 4
-Начинаем как всегда.
+Вы знаете, с чего мы начинаем.
 ![image](https://github.com/IvanBrekman/HashTable/blob/main/data/images/opt4_list_find.png)
 
-### Итоги (?)
+Части `list_find` ускорены, теперь только ускорять саму функцию. Для этого напишем функцию полностью на ассемблере в отдельном файле, причем работу `strcmp` заинлайним внутри функции.
+
+Немного разобравшись в смещениях по адресам получаем файл `list_find.asm`.
+```asm
+global list_find_asm
+
+section .text
+
+
+list_find_asm:
+                                            ; rdi = list* lst
+        mov         rsi, QWORD [rsi]        ; rsi = char* str
+        mov         edx, DWORD [rdi+40]     ; rdx = list->size
+        mov         rcx, QWORD [rdi+32]     ; rcx = list->data
+		
+        mov         r8,  0                  ; cycle counter: i = 0
+
+    check_cycle:
+        cmp         r8,  rdx                ; cmp(i, lst->size)
+        jge         end_cycle               ; if (i >= lst->size) end_cycle
+	
+	body_cycle:
+        mov         r9,  r8
+        sal         r9,  3
+        add         r9,  rcx                ; r9 = list->data + i
+        mov         r9, QWORD [r9]          ; r9 = list->data[i]
+		
+        vlddqu 	    ymm0, [rsi]
+        vlddqu 	    ymm1, [r9]
+        vpcmpeqb    ymm2, ymm0, ymm1
+        vpmovmskb   r10,  ymm2              ; r10 = cmp(str, list->data[i])
+		
+        cmp         r10d, 0xFFFFFFFF
+        jne         inc_cycle               ; if (r10 != -1 /* if not find */) continue cycle
+		
+        mov         rax, r8                 ; return i
+        jmp         end_find
+	
+	inc_cycle:
+        inc         r8                      ; i++
+        jmp         check_cycle
+	
+	end_cycle:
+        mov         eax, -64197             ; return NOT_FOUND;
+	
+	end_find:
+        ret
+```
+
+Компилируем и линкуем все файлы, после чего анализируем результат.
+```
+=============== Speed test ===============                               =============== Speed test ===============
+repeats:  100                                                            repeats:  100
+                                                           __   
+time avg: 12_049_929 ticks                                    \          time avg: 10_479_089 ticks
+                                                    ----------|          
+finds:    374300                                           __ /          finds:    374300
+inserts:  3743                                                           inserts:  3743
+fi coef:  100.000000                                                     fi coef:  100.000000
+==========================================                               ==========================================
+```
+
+В этот раз оптимизация помогла в 1.15 раз. Все еще неплохой результат. Можем продолжать.
+<br><br>
+
+### Оптимизация 5
 Начинаем как всегда.
-![image](https://github.com/IvanBrekman/Hash_Table/blob/main/data/images/opt_res1.png)
+![image](https://github.com/IvanBrekman/HashTable/blob/main/data/images/opt5_table_find.png)
 
-После оптимизаций `table_find`, `calloc` снова вылез вверх по нагрузке. Из его листинга мы помним, что он использовался в конструкторах структур. Конструктор таблицы мы увидели в последнем листинге, теперь посмотрим на конструктор листа.
-![image](https://github.com/IvanBrekman/Hash_Table/blob/main/data/images/opt_res2.png)
+Теперь уже в самом верху `table_find`, части которой оптимизированы. Остается повторить прошлую оптимизацию, но на этот раз с другой функцией.
 
-В обоих конструкторах основное время работы уходит на вызовы `calloc`, но от них никуда не деться, да и оптимизировать нет смысла, так как это все работает один раз при создании таблицы (не забывайте, что для усреднения времени таблица создавалась и заполнялась 100 раз). Для наглядности запустим тестирование времени работы с повтором 1 раз, но с `fi_coef=100`, моделируя поиск по созданному словарю, и посмотрим на листинг.
-![image](https://github.com/IvanBrekman/Hash_Table/blob/main/data/images/opt_res3.png)
+С уже имеющимся опытом написания получаем файл `table_find.asm`
+```asm
+global table_find
 
-Как видно, теперь в самом верху функции `table_find` и `crc32_hash_asm` (что очевидно), а функции загрузки, конструкторов и `calloc` почти не имеют нагрузки.
+section .text
 
-Также можем видеть сверху функции `clock`, отвечающие за измерения времени. Их, естественно, оптимизировать не надо :)
+extern list_find_asm
 
+table_find:
+                                            ; rdi = HashTable* table
+                                            ; rsi = char** str
+
+        ; ========== HASH FUNC ========== ;
+        mov         r8,  0                  ; hash = 0
+        mov         r9,  QWORD [rsi]        ; r9   = char* str
+
+        mov         rcx, 4
+
+        calc_hash:
+            mov     rax, [r9]
+
+            crc32   r8,  rax
+            add     r9,  8
+            loop    calc_hash
+        ; =============================== ; ; r8   = hash
+
+        mov         rax, r8
+        mov         edx, 0
+
+        mov         r10d, DWORD [rdi+68]    ; r10 = table->capacity
+        div         r10d                    ; edx = hash % table->capacity
+
+        mov         rdi, QWORD [rdi+56]     ; rdi = table->data
+        mov         rax, rdx                ;   ------------------------+
+        add         rdx, rdx                ;                           |
+        add         rdx, rax                ;                           |
+        sal         rdx, 4                  ; rdx *= 48 (sizeof List) <-+
+        add         rdi, rdx                ; rdi = table->data + hash
+                                            ; rsi = char** str
+        call        list_find_asm
+        ret                                 ; return list_find(table->data + hash, item);
+```
+
+Достаточно внушающе, а помогло ли?
+```
+=============== Speed test ===============                               =============== Speed test ===============
+repeats:  100                                                            repeats:  100
+                                                           __   
+time avg: 10_479_089 ticks                                    \          time avg: 10_964_645 ticks
+                                                    ----------|          
+finds:    374300                                           __ /          finds:    374300
+inserts:  3743                                                           inserts:  3743
+fi coef:  100.000000                                                     fi coef:  100.000000
+==========================================                               ==========================================
+```
+
+Программа стала работать медленнее на 5%. Получается, что на этом этапе компилятор со своими -O2 оптимизациями справляется лучше, чем наша программа на ассемблере. Что это значит? Это значит, что мы откатываем последнюю оптимизацию, возвращая как было, и заканчиваем оптимизировать таблицу.
+
+### Итоги
 Дальнейшие оптимизации уже не имеют смысла, так как дадут слишком мало, при том что потребуют уже немалых усилий, которые, скорее всего, ухудшат переносимость кода.
 
 Поэтому фиксируем результат.
@@ -499,15 +613,15 @@ fi coef:  100.000000                                                     fi coef
 =============== Speed test ===============                               =============== Speed test ===============
 repeats:  100                                                            repeats:  100
                                                            __   
-time avg: 0.004815 sec                                        \          time avg: 0.002858 sec
+time avg: 49_422_104 ticks                                    \          time avg: 10_479_089 ticks
                                                     ----------|          
-finds:    37430                                            __ /          finds:    37430
+finds:    374300                                           __ /          finds:    374300
 inserts:  3743                                                           inserts:  3743
-fi coef:  10.000000                                                      fi coef:  10.000000
+fi coef:  100.000000                                                     fi coef:  100.000000
 ==========================================                               ==========================================
 ```
 
-Всеми махинациями мы ускорили нашу таблицу в 1.68 раза. Отличный результат! Можно с чистой совестью отдохнуть и посмотреть мемы про котиков, после чего вернуться к любимому программированию!
+Всеми махинациями мы ускорили нашу таблицу в 4.72 раза. Отличный результат! Можно с чистой совестью отдохнуть и посмотреть мемы про котиков, после чего вернуться к любимому программированию!
 <br><br>
 
 <p align="center" width="100%">
