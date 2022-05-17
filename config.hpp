@@ -8,13 +8,12 @@
 #define VALIDATE_LEVEL      validate_level_t::NO_VALIDATE
 #define EXECUTE_WAITINGS    0
 
-#define LOG_PRINTF          2
-#define AUTO_DRAW           1
+#define LOG_PRINTF          0
+#define AUTO_DRAW           0
 
 #define TEST_SPEED
 #define NO_CHECKS
 
 #define USE_LIST_FIND_OPT
-#define USE_TABLE_FIND_OP
 
 #endif // CONFIG
