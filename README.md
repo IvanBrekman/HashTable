@@ -271,7 +271,7 @@ fi coef:  10.000000
 
 Приступим к оптимизациям!
 
-![hippo](https://github.com/IvanBrekman/Hash_Table/blob/main/data/images/cat_proger_gif.gif)
+![hippo](https://github.com/IvanBrekman/Hash_Table/blob/main/data/images/cat_proger_gif .gif)
 <br>
 
 ### Оптимизация 1
@@ -422,7 +422,7 @@ fi coef:  100.000000                                                     fi coef
 
 Учитывая накладные расходы мы ускорили программу в 3.65 раз... используя ассемблер! И что вы на это скажете, хейтеры ассемблера?
 
-![hippo](https://journals.ru/smile/users/13/125/12478.gif)
+![hippo](https://journals.ru/smile/users/13/125/12478 .gif)
 <br><br>
 
 ### Оптимизация 3
@@ -559,34 +559,31 @@ table_find:
                                             ; rsi = char** str
 
         ; ========== HASH FUNC ========== ;
-        mov         r8,  0                  ; hash = 0
+        xor         rax, rax                ; hash = 0
         mov         r9,  QWORD [rsi]        ; r9   = char* str
 
         mov         rcx, 4
 
         calc_hash:
-            mov     rax, [r9]
+            mov     r8,  [r9]
 
-            crc32   r8,  rax
+            crc32   rax,  r8
             add     r9,  8
             loop    calc_hash
-        ; =============================== ; ; r8   = hash
+        ; =============================== ; ; rax  = hash
 
-        mov         rax, r8
-        mov         edx, 0
+        xor         edx, edx
 
         mov         r10d, DWORD [rdi+68]    ; r10 = table->capacity
         div         r10d                    ; edx = hash % table->capacity
-
-        mov         rdi, QWORD [rdi+56]     ; rdi = table->data
-        mov         rax, rdx                ;   ------------------------+
-        add         rdx, rdx                ;                           |
-        add         rdx, rax                ;                           |
-        sal         rdx, 4                  ; rdx *= 48 (sizeof List) <-+
-        add         rdi, rdx                ; rdi = table->data + hash
+        
+        mov			r8,  rdi    ; r8  = HashTable* table;
+        
+        lea	    rdi, [rdx+rdx*2]	    ; rdi = hash * 48 (sizeof List);
+        sal	    rdi, 4
+        add	    rdi, QWORD [r8+56]	    ; rdi = hash + table->data;
                                             ; rsi = char** str
-        call        list_find_asm
-        ret                                 ; return list_find(table->data + hash, item);
+        jmp         list_find_asm           ; return list_find(table->data + hash, item);
 ```
 
 Достаточно внушающе, а помогло ли?
@@ -594,7 +591,7 @@ table_find:
 =============== Speed test ===============                               =============== Speed test ===============
 repeats:  100                                                            repeats:  100
                                                            __   
-time avg: 10_479_089 ticks                                    \          time avg: 10_964_645 ticks
+time avg: 10_479_089 ticks                                    \          time avg: 9_791_998 ticks
                                                     ----------|          
 finds:    374300                                           __ /          finds:    374300
 inserts:  3743                                                           inserts:  3743
@@ -602,18 +599,23 @@ fi coef:  100.000000                                                     fi coef
 ==========================================                               ==========================================
 ```
 
-Программа стала работать медленнее на 5%. Получается, что на этом этапе компилятор со своими -O2 оптимизациями справляется лучше, чем наша программа на ассемблере. Что это значит? Это значит, что мы откатываем последнюю оптимизацию, возвращая как было, и заканчиваем оптимизировать таблицу.
+Программа ускорилась в 1.09 раза.
 
-### Итоги
-Дальнейшие оптимизации уже не имеют смысла, так как дадут слишком мало, при том что потребуют уже немалых усилий, которые, скорее всего, ухудшат переносимость кода.
+### Итоги (?)
+Посмотрим еще раз в вывод KCacheGrind
+![image](https://github.com/IvanBrekman/HashTable/blob/main/data/images/opt_res_.png)
 
-Поэтому фиксируем результат.
+В самом верху мы видим нашу функцию `table_find` (это очевидно из ее нагрузки и списка функций из `Callers`).
+
+Дальнейшие оптимизации уже не имеют смысла, так как дадут слишком мало, при том что потребуют немалых усилий.
+
+Фиксируем результат.
 
 ```
 =============== Speed test ===============                               =============== Speed test ===============
 repeats:  100                                                            repeats:  100
                                                            __   
-time avg: 49_422_104 ticks                                    \          time avg: 10_479_089 ticks
+time avg: 49_422_104 ticks                                    \          time avg: 9_791_998 ticks
                                                     ----------|          
 finds:    374300                                           __ /          finds:    374300
 inserts:  3743                                                           inserts:  3743
@@ -621,9 +623,9 @@ fi coef:  100.000000                                                     fi coef
 ==========================================                               ==========================================
 ```
 
-Всеми махинациями мы ускорили нашу таблицу в 4.72 раза. Отличный результат! Можно с чистой совестью отдохнуть и посмотреть мемы про котиков, после чего вернуться к любимому программированию!
+Всеми махинациями мы ускорили нашу таблицу в 5.047 раза. Отличный результат! Можно с чистой совестью отдохнуть и посмотреть мемы про котиков, после чего вернуться к любимому программированию!
 <br><br>
 
 <p align="center" width="100%">
-  <img src="https://postila.ru/resize?w=480&src=%2Fdata%2F54%2F5a%2Ffe%2F65%2F545afe6582cf59575affc16ed610bc57fc7f7ddc938cbcd4ce5b973ffadbba11.gif"> 
+  <img src="https://postila.ru/resize?w=480&src=%2Fdata%2F54%2F5a%2Ffe%2F65%2F545afe6582cf59575affc16ed610bc57fc7f7ddc938cbcd4ce5b973ffadbba11 .gif"> 
 </p>
