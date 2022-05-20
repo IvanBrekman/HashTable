@@ -577,7 +577,7 @@ table_find:
         mov         r10d, DWORD [rdi+68]    ; r10 = table->capacity
         div         r10d                    ; edx = hash % table->capacity
         
-        mov			r8,  rdi    ; r8  = HashTable* table;
+        mov	    r8,  rdi                ; r8  = HashTable* table;
         
         lea	    rdi, [rdx+rdx*2]	    ; rdi = hash * 48 (sizeof List);
         sal	    rdi, 4
