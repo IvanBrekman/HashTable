@@ -15,5 +15,6 @@
 #define NO_CHECKS
 
 #define USE_LIST_FIND_OPT
+#define USE_TABLE_FIND_OPT
 
 #endif // CONFIG
